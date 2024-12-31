@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const deviceSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    deviceName: { type: String, required: true },
+    name: { type: String, required: true },
     ipAddress: { type: String },
     lastUsed: { type: Date, default: Date.now },
     token: { type: String, required: true }
