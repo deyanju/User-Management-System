@@ -1,24 +1,55 @@
-const multer = require('multer');
 const User = require('../models/User');
+const multer = require('multer');
+const path = require('path');
 
-// Set up multer for image upload
-const upload = multer({ dest: 'uploads/' });
+// Configure multer for profile image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/profileImages'); // Directory to store profile images
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${req.user._id}-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({ storage });
 
 exports.getProfile = async (req, res) => {
-    const user = await User.findById(req.userId);  // From JWT Middleware
-    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    res.json(user);
+    try {
+      
+      // Find the user by userId
+      const user = await User.findById(req.user.userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      // Return the list of devices
+      res.status(200).json({ name: user.name, email:user.email, profileImage:user.profileImage });
+    } catch (error) {
+    res.status(500).json({ message: 'Error fetching profile details.' });
+  }
+
+
 };
+
 
 exports.updateProfile = async (req, res) => {
-    const { username, email } = req.body;
-    const user = await User.findByIdAndUpdate(req.userId, { username, email }, { new: true });
+  const { name, email } = req.body;
 
+  try {
+    if (name) req.user.name = name;
+    if (email) req.user.email = email;
     if (req.file) {
-        user.profileImage = req.file.path;  // Store profile image path
-        await user.save();
+      req.user.profileImage = `/uploads/profileImages/${req.file.filename}`;
     }
 
-    res.json(user);
+    await req.user.save();
+    res.status(200).json({ message: 'Profile updated successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating profile.' });
+  }
 };
+
+exports.upload = upload.single('profileImage'); // Middleware to handle file upload

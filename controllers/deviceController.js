@@ -1,5 +1,4 @@
 const User = require('../models/User');
-const Device = require('../models/Device');
 const jwt = require('jsonwebtoken');
 
 
@@ -47,12 +46,12 @@ exports.logoutFromDevice = async (req, res) => {
     
 
     // Find and delete the device based on the userId and deviceId
-    const user = await User.findOneAndUpdate(
+     await User.findOneAndUpdate(
       { _id: userId },
       { $pull: { devices: { _id: deviceId } } }, // Use _id if deviceId is stored as _id in the device object
       { new: true }
     );
-    //console.log(devices);
+    
     if (!deviceId) {
       return res.status(404).json({ message: 'Device not found.' });
     }

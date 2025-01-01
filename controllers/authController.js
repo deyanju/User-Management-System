@@ -1,9 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const useragent = require('express-useragent');
 const User = require('../models/User');
 const { sendEmailVerification } = require('../utils/sendEmail');
-const { generateToken } = require('../config/jwt');  // Import generateToken
+
 
 // User Registration
 exports.register = async (req, res) => {
@@ -19,15 +18,16 @@ exports.register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    
     // Create new user
     const user = new User({ email, username, password: hashedPassword });
-    if (!user.name) {
-      user.name = 'Default User Name';  // Set default name if not already set
-    }
-    await user.save();
 
     // Generate email verification token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    user.token = token;
+
+    await user.save();
 
     // Send verification email
     const verificationLink = `${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;
@@ -54,11 +54,6 @@ exports.login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid password.' });
     }
-
-          // Ensure `name` is set for the User model (root level)
-          if (!user.name) {
-            user.name = 'Default User Name';  // Set default name if not already set
-          }
 
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
